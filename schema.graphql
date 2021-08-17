@@ -16,6 +16,9 @@ type Wallet @entity {
   transactionsConfirmedCount: BigInt!
   transactionsExecutedCount: BigInt!
 
+  totalTransactionFee: BigDecimal!
+  avgTransactionFee: BigDecimal!
+
   events: [WalletEvent!]! @derivedFrom(field: "wallet")
 
   eventsCount: BigInt!
@@ -328,6 +331,7 @@ type Burn implements Event @entity {
   blockNumber: BigInt!
   txIndex: BigInt!
   txHash: Bytes!
+  txFee: BigDecimal!
 
   token: BridgedToken!
 
@@ -349,6 +353,7 @@ type Lock implements Event @entity {
   blockNumber: BigInt!
   txIndex: BigInt!
   txHash: Bytes!
+  txFee: BigDecimal!
 
   token: Token!
 
@@ -430,6 +435,8 @@ type WalletDayData @entity {
   newAssetsCount: BigInt!
   eventsCount: BigInt!
   transactionsCount: BigInt!
+  totalTransactionFee: BigDecimal!
+  avgTransactionFee: BigDecimal!
 }
 
 type TokenDayData @entity {
