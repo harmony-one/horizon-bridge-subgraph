@@ -23,6 +23,7 @@ import {
 export let ZERO = BigInt.fromI32(0);
 export let ZERO_BD = ZERO.toBigDecimal();
 export let ONE = BigInt.fromI32(1);
+export let ETH_WEI = BigDecimal.fromString("1000000000000000000")
 
 export function createToken(
   address: Address,
@@ -103,6 +104,8 @@ export function getWallet(address: Address): Wallet {
     wallet.usersCount = ZERO;
     wallet.eventsCount = ZERO;
     wallet.transactionsCount = ZERO;
+    wallet.avgTransactionFee = ZERO_BD;
+    wallet.totalTransactionFee = ZERO_BD;
     wallet.transactionsConfirmedCount = ZERO;
     wallet.transactionsExecutedCount = ZERO;
     wallet.save();
@@ -211,6 +214,8 @@ export function getWalletDayData(
     walletDayData.assetsCount = wallet.assetsCount;
     walletDayData.newAssetsCount = ZERO;
     walletDayData.transactionsCount = ZERO;
+    walletDayData.totalTransactionFee = ZERO_BD;
+    walletDayData.avgTransactionFee = ZERO_BD;
 
     walletDayData.save();
   }
@@ -333,6 +338,8 @@ export function createTokenBurn<T extends IBurned>(
   burn.blockNumber = event.block.number;
   burn.txIndex = event.transaction.index;
   burn.txHash = event.transaction.hash;
+  burn.txFee = event.transaction.gasPrice.times(event.transaction.gasUsed)
+    .toBigDecimal().div(ETH_WEI);
   burn.save();
 
   token.eventsCount = token.eventsCount.plus(ONE);
@@ -349,6 +356,8 @@ export function createTokenBurn<T extends IBurned>(
   user.save();
 
   wallet.eventsCount = wallet.eventsCount.plus(ONE);
+  wallet.totalTransactionFee = wallet.totalTransactionFee.plus(burn.txFee);
+  wallet.avgTransactionFee = wallet.totalTransactionFee.div(wallet.transactionsCount.toBigDecimal());
   wallet.save();
 
   let dayData = getBridgedTokenDayData(token, event);
@@ -360,6 +369,9 @@ export function createTokenBurn<T extends IBurned>(
 
   let walletDayData = getWalletDayData(wallet, event);
   walletDayData.eventsCount = walletDayData.eventsCount.plus(ONE);
+  walletDayData.totalTransactionFee = walletDayData.totalTransactionFee.plus(burn.txFee);
+  walletDayData.avgTransactionFee = walletDayData.totalTransactionFee.div(wallet.transactionsCount.toBigDecimal());
+  
   walletDayData.save();
 }
 
@@ -417,6 +429,8 @@ export function createTokenLock<T extends ILocked>(
   lock.blockNumber = event.block.number;
   lock.txIndex = event.transaction.index;
   lock.txHash = event.transaction.hash;
+  lock.txFee = event.transaction.gasPrice.times(event.transaction.gasUsed)
+  .toBigDecimal().div(ETH_WEI);
   lock.save();
 
   token.eventsCount = token.eventsCount.plus(ONE);
@@ -434,6 +448,8 @@ export function createTokenLock<T extends ILocked>(
   user.save();
 
   wallet.eventsCount = wallet.eventsCount.plus(ONE);
+  wallet.totalTransactionFee = wallet.totalTransactionFee.plus(lock.txFee);
+  wallet.avgTransactionFee = wallet.avgTransactionFee.plus(lock.txFee).div(wallet.transactionsCount.toBigDecimal());
   wallet.save();
 
   let dayData = getTokenDayData(token, event);
